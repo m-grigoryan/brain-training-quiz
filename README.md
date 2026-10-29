@@ -1,8 +1,8 @@
 # Brain Training Quiz
 
-A dark-mode brain-training app with five-question sessions, three activities, and private saved progress. The core is vanilla HTML, CSS, and JavaScript in a single offline `index.html`; the hosted companion adds private cloud sync.
+A dark-mode brain-training app with five-question sessions, three activities, and private saved progress. Built with vanilla HTML, CSS, and JavaScript in a single offline `index.html`. The public GitHub Pages version saves progress in your browser.
 
-[Public app](https://brain-training-quiz.sceon-4149.chatgpt.site) · [Source repository](https://github.com/m-grigoryan/brain-training-quiz)
+[Public app](https://m-grigoryan.github.io/brain-training-quiz/) · [Source repository](https://github.com/m-grigoryan/brain-training-quiz)
 
 ## Activities
 
@@ -10,20 +10,16 @@ A dark-mode brain-training app with five-question sessions, three activities, an
 - **Math Practice:** choose addition, subtraction, multiplication, and/or exact division. Addition/subtraction begin at four digits; multiplication/division at one digit. Each correct answer increases that operation's level within the session. Future starting levels use the saved correctness pattern.
 - **Number Flow:** choose operations, keep a running total as a new step appears every three seconds, and answer after the sequence. Five rounds per session. A perfect session gently raises the next session's level; difficulty remains fixed within a session.
 
-## Sign-in, synced progress, and privacy
+## Browser-local history and backups
 
-The public app supports **Sign in with ChatGPT**. Signed-in session history, questions, answers, correctness, difficulty, and resumable progress sync to a private Cloudflare D1 record scoped to that account. Guests can still play and save only in their browser.
+The GitHub Pages edition uses **browser-local storage**, as requested. It makes no sign-in or cloud-sync requests and does not upload your answers. Quiz, Math Practice, and Number Flow keep separate histories, scores, and difficulty progress.
 
-- Each cloud request is authorized server-side using Sites' authenticated user ID. A visitor cannot select another user's record.
-- Cloud writes use atomic revisions. Conflicting device updates are merged and retried instead of silently replacing newer answers.
-- Quiz, Math Practice, and Number Flow histories remain separate. Their scores and adaptation use the same merged history across devices.
-- Existing guest progress is uploaded only when the visitor chooses **Add browser progress & sync**. **Use cloud history only** keeps the guest history separate.
-- Signing out or changing accounts switches the browser's active progress scope. Previously cached history is preserved separately and is not uploaded into another account.
-- Offline answers are saved in the browser and synced when connectivity returns or the account is reopened. Unsynced browser data can be lost if site storage is cleared, so keep backups.
-- **Quiz history → Export backup / Import backup** supports all three activities. To move old localhost progress, export it locally, then import it while signed in on the public app.
-- Site updates at the same address preserve local and cloud progress. No personal sessions or exported backups are committed to this repository.
-
-The single `index.html` remains an offline app. Cloud sync is supplied by the hosted server files; opening the HTML directly does not require an account or backend.
+- Sessions save questions, submitted answers, correctness, difficulty, dates, and resumable progress in this browser.
+- Updates at this same website address preserve local history. Clearing site data or switching browsers does not.
+- **Quiz history → Export backup** includes all three activities. Use **Import backup** on another browser/device to merge them without replacing existing history.
+- To move earlier localhost or cloud-hosted progress here, export a backup from that earlier app, then import it into the GitHub Pages app. Earlier data and the previous deployment are not deleted.
+- No account or automatic cross-device sync is used in this edition. Existing server source is retained for compatibility and possible future optional hosting; it is not needed or deployed by GitHub Pages.
+- Never commit personal backup files, database contents, or browser storage to this public repository.
 
 ### How difficulty adapts
 
@@ -43,18 +39,13 @@ python3 -m http.server 8765 --bind 127.0.0.1
 
 Then open `http://127.0.0.1:8765/`. No build step, dependencies, CDN, or backend is required.
 
-## Hosted version
+## GitHub Pages deployment
 
-The full app is deployed through Sites with ChatGPT sign-in and a Cloudflare D1 database. GitHub stores the public source; GitHub Pages alone cannot run the sign-in/sync backend.
+The public app is **https://m-grigoryan.github.io/brain-training-quiz/**. In repository Settings → Pages, publish `main` from `/ (root)`. The `.nojekyll` file keeps this a static deployment. No build step or backend is needed.
 
-- `index.html`: canonical standalone interface and exercise logic.
-- `app/route.ts`: serves that exact HTML in the hosted version.
-- `app/api/identity/route.ts`: optional signed-in identity.
-- `app/api/progress/route.ts` and `cloud/progress-server.mjs`: authenticated, account-scoped sync.
-- `db/schema.ts` and `drizzle/`: versioned schema migrations; no personal database contents.
-- `.openai/hosting.json`: non-secret deployment identity and database binding.
+GitHub chooses the hostname from the owner account: `braintraining.github.io` requires ownership of the `braintraining` GitHub account or organization. Naming a repository that way does not change the owner hostname.
 
-For full-stack local development, use Node.js 24+, install locked dependencies, run `npm run db:generate` only after schema changes, build, apply pending local D1 migrations, and run `npm run dev -- --port 5179 --hostname 127.0.0.1`. The Sites starter provides development-only mock sign-in on loopback; production uses platform authentication.
+`index.html` is the canonical standalone app. The retained `app/`, `cloud/`, `db/`, and deployment-helper files belong to the earlier optional cloud deployment. The GitHub Pages edition has `ENABLE_CLOUD_SYNC=false`; those backend routes do not run on GitHub Pages.
 
 ## Tests
 
@@ -70,6 +61,7 @@ node tests/five-question-tests.cjs
 node tests/home-navigation-tests.cjs
 node tests/adaptive-math-tests.cjs
 node tests/cloud-sync-tests.mjs
+node tests/static-hosting-tests.cjs
 ```
 
 The generation suite checks 27,000 questions, including retired types retained solely to support old saved histories. Number Flow checks 9,000 plans across all operation subsets and levels. State checks cover timer expiration, stale callbacks, hidden content, duplicate scoring, results, and resume behavior.
